@@ -26,13 +26,13 @@ function demo_prompt
 # example: demo_start "Awesome Demo"
 function demo_start
 {
-    echo ================================================================================ 
+    echo ================================================================================
     echo "  Welcome to the $1 demo."
     echo "    At the demo> prompt you can press:"
     echo "          q to quit"
     echo "          s to skip a command"
     echo "          or any other key to continue."
-    echo ================================================================================ 
+    echo ================================================================================
     demo_prompt_count=0
 }
 
