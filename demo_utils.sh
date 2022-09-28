@@ -18,7 +18,7 @@ demo_prompt_count=0
 
 function demo_prompt
 {
-    echo -n "demo> "
+    printf "demo> "
     ((demo_prompt_count++))
 }
 
@@ -31,24 +31,56 @@ function demo_start
     echo "    At the demo> prompt you can press:"
     echo "          q to quit"
     echo "          s to skip a command"
+    echo "          Enter to execute a command at the prompt"
     echo "          or any other key to continue."
     echo ================================================================================
     demo_prompt_count=0
 }
 
 # await for user to press a key before continuing
-#       pressing q will exit
-#       any other key will continue
-function demo_pause
+#       pressing q will call exit
+#       pressing s will return 1
+#       pressing any other ket returns 0
+# usage:
+#    demo_keypress key_pressed
+# where:
+#    key_pressed: the variable to set with the value of the key pressed
+#
+demo_keypress()
 {
-    read -s -n 1 k <&1
+    local __key_pressed=$1
+    IFS= read -s -n 1 k <&1
+    eval $__key_pressed="'$k'" # the this form allows us to preserve spaces
     if [[ $k = q ]] ; then
         printf "\nAborting demo\n"
         exit 0;
-    fi
-    if [[ $k = s ]] ; then
+    elif [[ $k = s ]] ; then
         return 1;
     fi
+    return 0;
+}
+
+# await for user to press a key before continuing
+#       pressing q will exit
+#       pressing enter will print a new demo prompt
+#       any other key will continue
+#       
+function demo_pause()
+{
+    while true; do
+        demo_keypress key
+        if (( $?==1 )) ; then
+            return 1
+        fi
+
+        if [[ $key = "" ]] ; then
+            # Enter Key
+            printf "\n"
+            demo_prompt
+        else
+            break
+        fi
+    done
     return 0;
 }
 
@@ -63,9 +95,10 @@ function demo_command()
         demo_prompt
         demo_pause
     fi
-    echo $1
-    demo_pause
+    printf "$1"
+    demo_keypress key
     if (( $?==0 )) ; then
+        printf "\n"
         eval "$1"
     else
         printf "skipping...\n"
