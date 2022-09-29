@@ -22,6 +22,8 @@ function demo_prompt
     ((demo_prompt_count++))
 }
 
+DEMO_HISTFILE=/tmp/demo_bash_history
+
 # prints out a nice notice about the demo and how to use it
 # example: demo_start "Awesome Demo"
 function demo_start
@@ -32,9 +34,12 @@ function demo_start
     echo "          q to quit"
     echo "          s to skip a command"
     echo "          Enter to execute a command at the prompt"
-    echo "          or any other key to continue."
+    echo "          Space or any other key to continue"
     echo ================================================================================
     demo_prompt_count=0
+    if [[ -f "${DEMO_HISTFILE}" ]] ; then
+        rm "${DEMO_HISTFILE}"
+    fi
 }
 
 # await for user to press a key before continuing
@@ -89,6 +94,7 @@ function demo_pause()
 # exceptions:
 #       pressing q will exit
 #       pressing s will skip
+#
 function demo_command()
 {
     if (( $demo_prompt_count==0 )) ; then
@@ -97,6 +103,7 @@ function demo_command()
     fi
     printf "$1"
     demo_keypress key
+    echo "$1" >> ${DEMO_HISTFILE}
     if (( $?==0 )) ; then
         printf "\n"
         eval "$1"
@@ -106,3 +113,23 @@ function demo_command()
     demo_prompt
 }
 
+# print out a message anouncing the end of the demo
+# with an option to quit or launch a subshell (retaining the demo env)
+#
+demo_end()
+{
+    printf "\n"
+    echo "------------------ end of demo -------------------------------------------------"
+    echo "  Thanks for watching"
+    echo ""
+    echo " q to quit, any other key to continue in a shell"
+    echo "--------------------------------------------------------------------------------"
+    demo_pause
+
+    # - launch a shell with the demo cmds in the history buffer
+    sync
+    HISTFILE=${DEMO_HISTFILE} PS1="demo> " /bin/bash
+    if [[ -f "${DEMO_HISTFILE}" ]] ; then
+        rm "${DEMO_HISTFILE}"
+    fi
+}
